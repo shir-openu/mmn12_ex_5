@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>תרגיל 5 - משוואות דיפרנציאליות</title>
+
+<!-- MathJax v3 -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['\\(','\\)']],
+      displayMath: [['\\[','\\]']],
+      packages: {'[+]':['noerrors']}
+    },
+    loader: { load: ['[tex]/noerrors'] },
+    chtml: { scale: 1.02, mtextInheritFont: true }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<!-- mathjs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+
+<style>
+  :root{
+    --bg:#0e1424; --panel:#111827; --ink:#e5e7eb; --muted:#9aa6b2;
+    --ring:#334155; --accent:#60a5fa; --ok:#34d399; --bad:#ef4444;
+    --field:#1f2a3a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;direction:rtl}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Segoe UI','Tahoma','Arial','David','FrankRuehl',serif;text-align:right;
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:22px}
+  h1{font-size:1.35rem;margin:0 0 16px}
+
+  /* Tabs */
+  .tabs{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap}
+  .tab-btn{
+    cursor:pointer; padding:8px 12px; border:1px solid var(--ring);
+    background:var(--field); color:var(--ink); border-radius:10px; font-size:.95rem;
+  }
+  .tab-btn[aria-selected="true"]{border-color:var(--accent)}
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+
+  .grid{display:grid;grid-template-columns:1fr 1.2fr;gap:16px}
+  @media (max-width:920px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--ring);border-radius:14px;padding:14px 16px}
+  .section-title{font-size:1.05rem;margin:0 0 10px;color:var(--ink)}
+
+  label{font-size:.92rem;color:var(--muted);display:block}
+  textarea{
+    width:100%;background:var(--field);color:var(--ink);
+    border:1px solid var(--ring);border-radius:12px;
+    padding:10px 12px;font-size:1rem;line-height:1.5;outline:none;
+    direction:ltr;text-align:left;font-family:monospace;
+  }
+  textarea:focus{border-color:var(--accent)}
+
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;justify-content:flex-start}
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ring);background:var(--field);padding:6px 10px;border-radius:999px;font-size:.9rem}
+  .btn{cursor:pointer;background:var(--field);border:1px solid var(--ring);color:var(--ink);padding:8px 12px;border-radius:10px}
+  .btn:hover{border-color:var(--accent)}
+
+  .status{font-size:.9rem;margin-top:6px;text-align:right}
+  .status.ok{color:var(--ok)} .status.bad{color:var(--bad)}
+
+  .render{
+    background:#0b1020;border:1px dashed #243047;border-radius:12px;
+    padding:14px 16px;min-height:96px;overflow:auto;direction:ltr;text-align:center;
+  }
+  .hint{color:var(--muted);font-size:.95rem;margin-top:8px;line-height:1.9}
+  .monospace{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace}
+  select{background:var(--field);color:var(--ink);border:1px solid var(--ring);border-radius:10px;padding:6px 8px}
+</style>
+<style>
+  /* סגנון מינימלי לסרגל המשוואות */
+  .eqtb-wrap{ margin:8px 0 }
+  .eqtb{
+    display:flex; flex-wrap:wrap; gap:.4rem; align-items:center;
+    background:#0b1020; border:1px solid #243047; border-radius:10px; padding:.5rem;
+  }
+  .eqtb button, .eqtb select{
+    font:inherit; line-height:1; padding:.42rem .6rem;
+    border:1px solid var(--ring); background:var(--field); color:var(--ink);
+    border-radius:.5rem; cursor:pointer;
+  }
+  .eqtb button:hover{ border-color:var(--accent) }
+  .eqtb .sep{ width:1px; height:1.4rem; background:#243047; margin:0 .2rem }
+</style>
+
+</head>
+<body>
+  <div class="wrap">
+    <h1>תרגיל 5 - משוואות דיפרנציאליות</h1>
+
+    <!-- Tabs header -->
+    <div class="tabs" role="tablist" aria-label="ניווט לשוניות">
+      <button class="tab-btn" role="tab" aria-selected="true"  aria-controls="tab-ex"   id="tabbtn-ex">תרגיל</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-h1"  id="tabbtn-h1">רמז 1</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-h2"  id="tabbtn-h2">רמז 2</button>
+    </div>
+
+    <!-- Panel: תרגיל -->
+    <section class="tab-panel active" id="tab-ex" role="tabpanel" aria-labelledby="tabbtn-ex">
+      <div class="grid">
+        <!-- ימין: השאלה -->
+        <aside class="card">
+          <div class="section-title">פתרו</div>
+          <div id="problemRender" class="render"></div>
+        </aside>
+
+        <!-- שמאל: תשובת הסטודנטים -->
+        <section class="card">
+          <div class="section-title">הזינו כאן את התשובה הסופית</div>
+
+<label for="inputRaw">קלט Plain או LaTeX</label>
+
+<!-- mount לעורך המשוואות מעל תיבת הקלט -->
+<div id="eqToolbar" class="eqtb-wrap" aria-label="עורך משוואות (הוספת סמלים)"></div>
+
+<textarea id="inputRaw" rows="6"
+placeholder="דוגמה לכתיבה בLaTeX:
+y = A*e^(2x) + B*x*e^(2x)
+או:
+y = A*exp(2*x) + B*x*exp(2*x)"></textarea>
+
+          
+          <div class="controls">
+            <span class="pill"><input type="checkbox" id="forceLatex"><label for="forceLatex" style="margin:0">מצב LaTeX</label></span>
+            <button class="btn" id="btnClear">ניקוי</button>
+            <button class="btn" id="btnCheck">בדיקת מבנה</button>
+            <span class="pill">מצב בדיקה
+              <select id="checkMode">
+                <option value="structure" selected>בדיקת מבנה</option>
+              </select>
+            </span>
+          </div>
+
+          <div id="status" class="status"></div>
+
+          <label style="margin-top:10px;display:block">תצוגה</label>
+          <div id="render" class="render"></div>
+
+          <div id="checkMsg" class="status" style="margin-top:10px"></div>
+
+          <div class="hint">
+		    • ביטוי מורכב יש לשים בתוך { }<br/>
+            • בדיקת המבנה תאמת שיש את כל הרכיבים הנדרשים<br/>
+			• הטקסט הקיים במסך אינו פתרון התרגיל אלא דוגמה לכתיבת משוואה<br/>
+            • יש להשתמש בקבועים שרירותיים (A, B או C_1, C_2) עבור הפתרון ההומוגני<br/>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- Panel: רמז 1 -->
+    <section class="tab-panel" id="tab-h1" role="tabpanel" aria-labelledby="tabbtn-h1">
+      <div class="card">
+        <div class="section-title">רמז 1 - הפתרון ההומוגני</div>
+        <div class="hint" id="hint1Box"></div>
+      </div>
+    </section>
+
+    <!-- Panel: רמז 2 -->
+    <section class="tab-panel" id="tab-h2" role="tabpanel" aria-labelledby="tabbtn-h2">
+      <div class="card">
+        <div class="section-title">רמז 2 - הפתרון הפרטי</div>
+        <div class="hint" id="hint2Box"></div>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+/* =========================
+   מבנה נתונים של תרגילים
+   ========================= */
+const problems = [
+  {
+    id: 'ode_second_order_variation_params_q5',
+    title: 'שאלה 5 - וריאציית פרמטרים',
+    
+    latexProblem: String.raw`y'' - 4y' + 4y = \left(\frac{e^x}{x}\right)^2`,
+    exampleInput: String.raw`y = A*e^(2x) + B*x*e^(2x)`,
+    
+    hint1Html: `
+      זוהי משוואה לינארית אי-הומוגנית מסדר שני עם מקדמים קבועים.<br/><br/>
+      
+      <strong>שלב 1: פתרו את המשוואה ההומוגנית</strong><br/>
+      המשוואה ההומוגנית המתאימה: \\(y'' - 4y' + 4y = 0\\)<br/><br/>
+      
+      המשוואה האופיינית: \\(\\lambda^2 - 4\\lambda + 4 = 0\\)<br/><br/>
+      
+      פתרו את המשוואה האופיינית ומצאו את השורשים.<br/>
+      שימו לב לריבוי השורשים!<br/><br/>
+      
+      לאחר מציאת השורשים, רשמו את הפתרון הכללי של המשוואה ההומוגנית \\(y_h\\).
+    `,
+    
+    hint2Html: `
+      <strong>שלב 2: מציאת פתרון פרטי</strong><br/><br/>
+      
+      כעת עליכם למצוא פתרון פרטי \\(y_p\\) של המשוואה המלאה.<br/><br/>
+      
+      השתמשו בשיטת <strong>וריאציית הפרמטרים</strong> (משפט 2.24 בספר).<br/><br/>
+      
+      הפתרון ההומוגני שמצאתם ברמז 1 הוא בצורה \\(y_h = Ae^{2x} + Bxe^{2x}\\).<br/>
+      אז הפונקציות הבסיסיות שלכם הן: \\(y_1 = e^{2x}\\) ו-\\(y_2 = xe^{2x}\\).<br/><br/>
+      
+      חשבו את הוורונסקיאן \\(W(y_1, y_2)\\).<br/><br/>
+      
+      לאחר מכן השתמשו בנוסחאות של וריאציית פרמטרים למציאת \\(A(x)\\) ו-\\(B(x)\\).<br/><br/>
+      
+      <strong>הפתרון הכללי:</strong> \\(y = y_h + y_p\\)
+    `,
+    
+    check: {
+      type: 'structure_check_q5'
+    }
+  }
+];
+
+/* =========================
+   Tabs
+   ========================= */
+(function(){
+  const buttons = [...document.querySelectorAll('.tab-btn')];
+  const panels  = [...document.querySelectorAll('.tab-panel')];
+  function activate(id){
+    buttons.forEach(b=>b.setAttribute('aria-selected', String(b.getAttribute('aria-controls')===id)));
+    panels.forEach(p=>p.classList.toggle('active', p.id===id));
+    if (window.MathJax?.typesetPromise) MathJax.typesetPromise(panels.filter(p=>p.id===id));
+  }
+  buttons.forEach(btn=>btn.addEventListener('click', ()=>activate(btn.getAttribute('aria-controls'))));
+})();
+
+/* =========================
+   Render helpers
+   ========================= */
+function waitForLibraries(cb){
+  let tries=0;(function check(){
+    if (typeof math!=='undefined' && window.MathJax) cb();
+    else if(tries++<100) setTimeout(check,50);
+    else console.error('Libraries failed to load');
+  })();
+}
+async function renderLatexTo(containerId, latex, display=true){
+  const el = document.getElementById(containerId);
+  el.innerHTML = display ? `\\[ ${latex} \\]` : `\\(${latex}\\)`;
+  if (window.MathJax?.typesetPromise){
+    try{ await MathJax.typesetPromise([el]) }catch{ el.innerHTML = `<div class="monospace">${latex}</div>` }
+  }
+}
+function setHtml(id, html){
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  if (window.MathJax?.typesetPromise){ MathJax.typesetPromise([el]); }
+}
+
+/* ============================================================================
+   GENERAL INPUT PROCESSING FUNCTIONS
+   ============================================================================ */
+function sanitizeBasic(s){ return (s||'').replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g,'').trim() }
+function looksLikeLatex(s){ 
+  return /\\[a-zA-Z]+|\\\[|\\\]|\\\(|\\\)|\$(?!\s*$)|\\int|\\sum|\\frac|\\sqrt|\\sin|\\cos|\\exp|\\cdot/.test(s) 
+}
+function insertImplicitMult(s){
+  const id = '([A-Za-z](?:[A-Za-z0-9_]*))';
+  
+  s = s.replace(
+    new RegExp(
+      '\\b' + id + '\\s*(?=\\()(?!(?:\\s*\\)))' 
+    , 'g'),
+    (m)=> {
+      const name = m.replace(/\s*\($/,'').trim();
+      const funcs = ['exp','sin','cos','tan','asin','acos','atan','log','ln','sqrt','abs'];
+      return funcs.includes(name) ? m : m.replace(/\s*\($/,'*(');
+    }
+  );
+  
+  s = s.replace(/\b([AaBbCcDd]_?\d*)\s*([a-zA-Z]+\()/g, '$1*$2');
+  s = s.replace(new RegExp(id + '\\s*(?=\\b[xX]\\b)', 'g'), '$1*');
+  s = s.replace(new RegExp(id + '\\s*e\\s*\\^', 'g'), '$1*e^');
+  s = s.replace(new RegExp(id + '\\s*(?=\\b(?:sin|cos|tan|asin|acos|atan|exp|log|ln|sqrt|abs)\\b)', 'g'), '$1*');
+  return s;
+}
+function convertMathNotation(s){
+  s = s.replace(/\be\s*\^\s*\(/g, 'exp(');
+  s = s.replace(/\be\s*\^\s*([a-zA-Z_]\w*)/g, 'exp($1)');
+  s = s.replace(/\be\s*\^\s*([0-9]+)/g, 'exp($1)');
+  s = s.replace(/\be\s*\^\s*\{([^}]+)\}/g, 'exp($1)');
+  s = s.replace(/exp\((\d+)([a-zA-Z])\)/g, 'exp($1*$2)');
+  s = s.replace(/(\d+)([a-zA-Z])/g, '$1*$2');
+  s = s.replace(/\^/g, '**');
+  return s;
+}
+function normalizeToPlain(s){
+  let t = sanitizeBasic(s);
+  t = t.replace(/^\s*[yY]\s*(\(\s*x\s*\))?\s*=\s*/, '');
+  t = t.replace(/\\frac\{1\}\{2\}/g, '0.5');
+  t = t.replace(/\\frac\{(\d+)\}\{(\d+)\}/g, '$1/$2');
+  t = t.replace(/(0\.5|1\/2|\d+\/\d+)([a-zA-Z])/g, '$1*$2');
+  t = t.replace(/([AaBbCcDd])_\{(\d+)\}/g, '$1_$2');
+  t = t.replace(/\b(sin|cos|tan|exp|ln|log|sqrt)x\b/g, '$1(x)');
+  t = t.replace(/\b(sin|cos|tan|exp|ln|log|sqrt)\s+x\b/g, '$1(x)');
+  t = t.replace(/\b(sin|cos|tan|exp|ln|log|sqrt)(?=\s*[\+\-\*\/\s]|$)/g, '$1(x)');
+  t = t.replace(/(\d),(\d)/g,'$1.$2');
+  t = insertImplicitMult(t);
+  t = convertMathNotation(t);
+  return t;
+}
+
+/* ============================================================================
+   EXERCISE-SPECIFIC CHECKING FUNCTION
+   ============================================================================ */
+function checkQuestion5Structure(userRaw) {
+    if (!userRaw || !userRaw.trim()) return { valid: false, message: 'אנא הזינו תשובה' };
+    
+    try {
+        console.log('=== Structure Check for Question 5 ===');
+        console.log('Raw input:', userRaw);
+        
+        const normalized = normalizeToPlain(userRaw).toLowerCase().replace(/\s+/g, '');
+        console.log('Normalized:', normalized);
+        
+        // Check for arbitrary constants (A, B or C_1, C_2)
+        const hasConstants = /[abcd](?:_?\d)?/.test(normalized);
+        if (!hasConstants) {
+            return { valid: false, message: 'חסרים קבועים שרירותיים (A, B או C_1, C_2)' };
+        }
+        
+        // Check for exp(2x) or e^(2x) terms
+        const hasExp2x = /exp\(2\*?x\)|e\*\*\(2\*?x\)/.test(normalized);
+        if (!hasExp2x) {
+            return { valid: false, message: 'חסר איבר מהצורה e^(2x)' };
+        }
+        
+        // Check for x*exp(2x) terms
+        const hasXExp2x = /x\*exp\(2\*?x\)|x\*e\*\*\(2\*?x\)/.test(normalized);
+        if (!hasXExp2x) {
+            return { valid: false, message: 'חסר איבר מהצורה x*e^(2x)' };
+        }
+        
+        // Check for ln or log term
+        const hasLn = /ln|log/.test(normalized);
+        if (!hasLn) {
+            return { valid: false, message: 'חסר איבר עם לוגריתם (ln)' };
+        }
+        
+        console.log('All structure checks passed!');
+        return { 
+            valid: true, 
+            message: 'המבנה נראה תקין! יש את כל הרכיבים הדרושים: קבועים שרירותיים, איבר e^(2x), איבר x*e^(2x), ואיבר לוגריתמי.' 
+        };
+        
+    } catch (err) {
+        console.error('Error in structure check:', err);
+        return { valid: false, message: 'שגיאה בבדיקת המבנה' };
+    }
+}
+
+/* =========================
+   UI wiring + loadProblem
+   ========================= */
+waitForLibraries(function(){
+  const inputEl = document.getElementById('inputRaw');
+  const forceLatexEl = document.getElementById('forceLatex');
+  const btnClear = document.getElementById('btnClear');
+  const btnCheck = document.getElementById('btnCheck');
+
+  function setStatus(msg, cls){
+    const el = document.getElementById('status');
+    el.className = `status ${cls||''}`;
+    el.textContent = msg||'';
+  }
+
+  let debTimer=null; function debounce(fn,ms=180){ clearTimeout(debTimer); debTimer=setTimeout(fn,ms) }
+  async function process(){
+    const raw0 = inputEl.value, raw = sanitizeBasic(raw0);
+    if(!raw){ document.getElementById('render').innerHTML=''; setStatus('',''); return }
+    const forced = forceLatexEl.checked, latexMode = forced || looksLikeLatex(raw);
+    try{
+      if(latexMode){
+        await renderLatexTo('render', raw, true);
+        setStatus('מעובד במצב LaTeX', 'ok');
+      }else{
+        const plain = normalizeToPlain(raw);
+        const node = math.parse(plain);
+        let latex = node.toTex({ parenthesis:'keep', implicit:'show' });
+        
+        latex = latex.replace(/A\\_1/g, 'A_{1}');
+        latex = latex.replace(/A\\_2/g, 'A_{2}');
+        latex = latex.replace(/B\\_1/g, 'B_{1}');
+        latex = latex.replace(/B\\_2/g, 'B_{2}');
+        latex = latex.replace(/C\\_1/g, 'C_{1}');
+        latex = latex.replace(/C\\_2/g, 'C_{2}');
+        
+        await renderLatexTo('render', latex, true);
+        setStatus('מעובד במצב Plain → LaTeX באמצעות mathjs', 'ok');
+      }
+    }catch(err){
+      document.getElementById('render').innerHTML =
+        `<div class="monospace">שגיאה בעיבוד\n${(err?.message||String(err))}\n\nקלט\n${raw}</div>`;
+      setStatus('שגיאה בעיבוד — לבדוק תחביר', 'bad');
+    }
+  }
+
+  inputEl.addEventListener('input', ()=>debounce(process,120));
+  forceLatexEl.addEventListener('change', process);
+  
+  document.getElementById('btnClear').addEventListener('click', ()=>{
+    inputEl.value=''; document.getElementById('render').innerHTML=''; setStatus('','');
+    document.getElementById('checkMsg').textContent=''; inputEl.focus();
+  });
+  
+  document.getElementById('btnCheck').addEventListener('click', ()=>{
+    const raw0 = inputEl.value;
+    const el = document.getElementById('checkMsg');
+    
+    const result = checkQuestion5Structure(raw0);
+    el.className = 'status ' + (result.valid ? 'ok' : 'bad');
+    el.textContent = result.message;
+  });
+
+  async function loadProblem(index=0){
+    const p = problems[index];
+    await renderLatexTo('problemRender', p.latexProblem, true);
+    setHtml('hint1Box', p.hint1Html);
+    setHtml('hint2Box', p.hint2Html);
+
+    const inputEl2 = document.getElementById('inputRaw');
+    inputEl2.value = p.exampleInput || '';
+    (typeof process === 'function') && process();
+  }
+
+  loadProblem(0);
+});
+</script>
+
+<script>
+/* מודול עורך משוואות */
+(function(){
+  function insertAtCaret(el, before, after){
+    el.focus();
+    const s = el.selectionStart ?? el.value.length;
+    const e = el.selectionEnd   ?? el.value.length;
+    const sel = el.value.slice(s, e);
+    const text = before + (sel || '') + (after || '');
+    el.value = el.value.slice(0, s) + text + el.value.slice(e);
+    const pos = sel ? s + before.length + sel.length : s + before.length;
+    el.setSelectionRange(pos, pos);
+    el.dispatchEvent(new Event('input',  { bubbles:true }));
+    el.dispatchEvent(new Event('change', { bubbles:true }));
+  }
+
+  function btn(label, title, onClick){
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = label; if(title) b.title = title;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  window.initEquationToolbar = function(opts){
+    const input = document.querySelector(opts.target);
+    const mount = document.querySelector(opts.mount);
+    if(!input || !mount) return;
+
+    const bar = document.createElement('div');
+    bar.className = 'eqtb';
+
+const items = [
+  {label:'A', title:'קבוע A',     click:()=>insertAtCaret(input,'A','')},
+  {label:'B', title:'קבוע B',     click:()=>insertAtCaret(input,'B','')},
+  {label:'x', title:'משתנה x',    click:()=>insertAtCaret(input,'x','')},
+
+  {label:'e^x', title:'e^{x}',        click:()=>insertAtCaret(input,'e^','x')},
+  {label:'exp', title:'exp( )',       click:()=>insertAtCaret(input,'exp(',')')},
+  
+  {label:'ln',  title:'ln( )',        click:()=>insertAtCaret(input,'ln(',')')},
+  
+  {label:'x^2', title:'x^{2}',        click:()=>insertAtCaret(input,'x^','2')},
+  
+  {label:'( )', title:'סוגריים עגולים',   click:()=>insertAtCaret(input,'(',')')},
+  {label:'| |', title:'ערך מוחלט',        click:()=>insertAtCaret(input,'|','|')},
+];
+
+    items.forEach(it => bar.appendChild(btn(it.label, it.title, it.click)));
+    mount.appendChild(bar);
+  };
+})();
+</script>
+
+<script>
+  initEquationToolbar({ target:'#inputRaw', mount:'#eqToolbar' });
+</script>
+
+</body>
+</html>
