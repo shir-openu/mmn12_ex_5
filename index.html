@@ -325,6 +325,19 @@ function checkQuestion5Structure(userRaw) {
         normalized = normalized.toLowerCase().replace(/\s+/g, '');
         console.log('After toLowerCase and space removal:', normalized);
         
+        // Check for numeric coefficients before arbitrary constants (like 2*C_1 or 3*A)
+        const hasNumericCoeff = /\d+\*[abcd](?:_?\d)?/.test(normalized);
+        if (hasNumericCoeff) {
+            return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
+        // Check for constant terms at the end (like +1, -5, +3.5, etc.)
+        // This matches: + or - followed by numbers (with optional decimal point) at the end
+        const hasConstantTerm = /[+\-]\d+(?:\.\d+)?$/.test(normalized);
+        if (hasConstantTerm) {
+            return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
         // Check for arbitrary constants (A, B or C_1, C_2)
         const hasConstants = /[abcd](?:_?\d)?/.test(normalized);
         if (!hasConstants) {
@@ -349,23 +362,19 @@ function checkQuestion5Structure(userRaw) {
             return { valid: false, message: 'תשובה לא נכונה' };
         }
         
-        // Check that the logarithmic term has a MINUS sign and NO coefficient (or coefficient 1)
-        // Should be: -exp(2*x)*ln or -e**(2*x)*ln
-        // Should NOT be: +exp(2*x)*ln or -2*exp(2*x)*ln or +2*exp(2*x)*ln
-        
-        // Check for wrong coefficient (any number other than 1 before exp)
+        // Check for wrong coefficient before exp in the ln term (any number other than 1)
         const hasWrongCoeff = /[+\-]\d+\*exp\(2\*?x\)\*(?:ln|log)/.test(normalized);
         if (hasWrongCoeff) {
             return { valid: false, message: 'תשובה לא נכונה' };
         }
         
-        // Check for plus sign instead of minus
+        // Check for plus sign instead of minus before ln term
         const hasPlusBeforeLn = /\+exp\(2\*?x\)\*(?:ln|log)|\+e\*\*\(2\*?x\)\*(?:ln|log)/.test(normalized);
         if (hasPlusBeforeLn) {
             return { valid: false, message: 'תשובה לא נכונה' };
         }
         
-        // Check that there IS a minus sign
+        // Check that there IS a minus sign before ln term
         const hasMinusBeforeLn = /-exp\(2\*?x\)\*(?:ln|log)|-e\*\*\(2\*?x\)\*(?:ln|log)/.test(normalized);
         if (!hasMinusBeforeLn) {
             return { valid: false, message: 'תשובה לא נכונה' };
