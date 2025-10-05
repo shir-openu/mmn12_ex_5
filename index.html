@@ -134,7 +134,7 @@ y = A*exp(2*x) + B*x*exp(2*x)"></textarea>
           <div class="controls">
             <span class="pill"><input type="checkbox" id="forceLatex"><label for="forceLatex" style="margin:0">מצב LaTeX</label></span>
             <button class="btn" id="btnClear">ניקוי</button>
-            <button class="btn" id="btnCheck">בדיקת מבנה</button>
+            <button class="btn" id="btnCheck">בדיקת תשובה</button>
             <span class="pill">מצב בדיקה
               <select id="checkMode">
                 <option value="structure" selected>בדיקת מבנה</option>
@@ -190,34 +190,21 @@ const problems = [
     exampleInput: String.raw`y = A*e^(2x) + B*x*e^(2x)`,
     
     hint1Html: `
-      זוהי משוואה לינארית אי-הומוגנית מסדר שני עם מקדמים קבועים.<br/><br/>
-      
-      <strong>שלב 1: פתרו את המשוואה ההומוגנית</strong><br/>
-      המשוואה ההומוגנית המתאימה: \\(y'' - 4y' + 4y = 0\\)<br/><br/>
-      
-      המשוואה האופיינית: \\(\\lambda^2 - 4\\lambda + 4 = 0\\)<br/><br/>
-      
-      פתרו את המשוואה האופיינית ומצאו את השורשים.<br/>
-      שימו לב לריבוי השורשים!<br/><br/>
-      
-      לאחר מציאת השורשים, רשמו את הפתרון הכללי של המשוואה ההומוגנית \\(y_h\\).
+      זוהי משוואה לינארית אי-הומוגנית מסדר שני עם מקדמים קבועים.<br/>
+      השתמשו בשיטת וריאציית הפרמטרים לפתרון.<br/>
+      הפתרון הכללי: \\(y = y_h + y_p\\)<br/>
+      כאשר \\(y_h\\) הוא הפתרון של המשוואה ההומוגנית \\(y'' - 4y' + 4y = 0\\)<br/>
+      המשוואה האופיינית: \\(\\lambda^2 - 4\\lambda + 4 = 0\\)<br/>
+      ניתן לפרק: \\((\\lambda - 2)^2 = 0\\), לכן יש שורש כפול \\(\\lambda = 2\\)<br/>
+      מהו הפתרון ההומוגני?
     `,
     
     hint2Html: `
-      <strong>שלב 2: מציאת פתרון פרטי</strong><br/><br/>
-      
-      כעת עליכם למצוא פתרון פרטי \\(y_p\\) של המשוואה המלאה.<br/><br/>
-      
-      השתמשו בשיטת <strong>וריאציית הפרמטרים</strong> (משפט 2.24 בספר).<br/><br/>
-      
-      הפתרון ההומוגני שמצאתם ברמז 1 הוא בצורה \\(y_h = Ae^{2x} + Bxe^{2x}\\).<br/>
-      אז הפונקציות הבסיסיות שלכם הן: \\(y_1 = e^{2x}\\) ו-\\(y_2 = xe^{2x}\\).<br/><br/>
-      
-      חשבו את הוורונסקיאן \\(W(y_1, y_2)\\).<br/><br/>
-      
-      לאחר מכן השתמשו בנוסחאות של וריאציית פרמטרים למציאת \\(A(x)\\) ו-\\(B(x)\\).<br/><br/>
-      
-      <strong>הפתרון הכללי:</strong> \\(y = y_h + y_p\\)
+      הפונקציה \\(g(x) = \\left(\\frac{e^x}{x}\\right)^2 = \\frac{e^{2x}}{x^2}\\) דורשת וריאציית פרמטרים כי אינה מתאימה להשוואת מקדמים.<br/>
+      הפתרון ההומוגני: \\(y_h = Ae^{2x} + Bxe^{2x}\\)<br/>
+      לוריאציית פרמטרים: \\(y_1 = e^{2x}, y_2 = xe^{2x}\\)<br/>
+      חשבו את הרונסקיאן: \\(W(y_1, y_2) = \\begin{vmatrix} e^{2x} & xe^{2x} \\\\ 2e^{2x} & e^{2x} + 2xe^{2x} \\end{vmatrix}\\)<br/>
+      הפתרון הפרטי: \\(y_p = -y_1 \\int \\frac{y_2 g(x)}{W} dx + y_2 \\int \\frac{y_1 g(x)}{W} dx\\)
     `,
     
     check: {
@@ -284,6 +271,12 @@ function insertImplicitMult(s){
     }
   );
   
+  // Add multiplication between closing parenthesis and function names
+  s = s.replace(/\)\s*(?=(?:exp|sin|cos|tan|ln|log|sqrt|abs)\()/g, ')*');
+  
+  // Add multiplication between exp(...) or e^{...} and ln/log
+  s = s.replace(/(\)|\})\s*(?=ln|log)/g, '$1*');
+  
   s = s.replace(/\b([AaBbCcDd]_?\d*)\s*([a-zA-Z]+\()/g, '$1*$2');
   s = s.replace(new RegExp(id + '\\s*(?=\\b[xX]\\b)', 'g'), '$1*');
   s = s.replace(new RegExp(id + '\\s*e\\s*\\^', 'g'), '$1*e^');
@@ -326,42 +319,67 @@ function checkQuestion5Structure(userRaw) {
         console.log('=== Structure Check for Question 5 ===');
         console.log('Raw input:', userRaw);
         
-        const normalized = normalizeToPlain(userRaw).toLowerCase().replace(/\s+/g, '');
-        console.log('Normalized:', normalized);
+        let normalized = normalizeToPlain(userRaw);
+        console.log('After normalizeToPlain:', normalized);
+        
+        normalized = normalized.toLowerCase().replace(/\s+/g, '');
+        console.log('After toLowerCase and space removal:', normalized);
         
         // Check for arbitrary constants (A, B or C_1, C_2)
         const hasConstants = /[abcd](?:_?\d)?/.test(normalized);
         if (!hasConstants) {
-            return { valid: false, message: 'חסרים קבועים שרירותיים (A, B או C_1, C_2)' };
+            return { valid: false, message: 'תשובה לא נכונה' };
         }
         
         // Check for exp(2x) or e^(2x) terms
         const hasExp2x = /exp\(2\*?x\)|e\*\*\(2\*?x\)/.test(normalized);
         if (!hasExp2x) {
-            return { valid: false, message: 'חסר איבר מהצורה e^(2x)' };
+            return { valid: false, message: 'תשובה לא נכונה' };
         }
         
         // Check for x*exp(2x) terms
         const hasXExp2x = /x\*exp\(2\*?x\)|x\*e\*\*\(2\*?x\)/.test(normalized);
         if (!hasXExp2x) {
-            return { valid: false, message: 'חסר איבר מהצורה x*e^(2x)' };
+            return { valid: false, message: 'תשובה לא נכונה' };
         }
         
         // Check for ln or log term
         const hasLn = /ln|log/.test(normalized);
         if (!hasLn) {
-            return { valid: false, message: 'חסר איבר עם לוגריתם (ln)' };
+            return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
+        // Check that the logarithmic term has a MINUS sign and NO coefficient (or coefficient 1)
+        // Should be: -exp(2*x)*ln or -e**(2*x)*ln
+        // Should NOT be: +exp(2*x)*ln or -2*exp(2*x)*ln or +2*exp(2*x)*ln
+        
+        // Check for wrong coefficient (any number other than 1 before exp)
+        const hasWrongCoeff = /[+\-]\d+\*exp\(2\*?x\)\*(?:ln|log)/.test(normalized);
+        if (hasWrongCoeff) {
+            return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
+        // Check for plus sign instead of minus
+        const hasPlusBeforeLn = /\+exp\(2\*?x\)\*(?:ln|log)|\+e\*\*\(2\*?x\)\*(?:ln|log)/.test(normalized);
+        if (hasPlusBeforeLn) {
+            return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
+        // Check that there IS a minus sign
+        const hasMinusBeforeLn = /-exp\(2\*?x\)\*(?:ln|log)|-e\*\*\(2\*?x\)\*(?:ln|log)/.test(normalized);
+        if (!hasMinusBeforeLn) {
+            return { valid: false, message: 'תשובה לא נכונה' };
         }
         
         console.log('All structure checks passed!');
         return { 
             valid: true, 
-            message: 'המבנה נראה תקין! יש את כל הרכיבים הדרושים: קבועים שרירותיים, איבר e^(2x), איבר x*e^(2x), ואיבר לוגריתמי.' 
+            message: 'תשובה נכונה' 
         };
         
     } catch (err) {
         console.error('Error in structure check:', err);
-        return { valid: false, message: 'שגיאה בבדיקת המבנה' };
+        return { valid: false, message: 'תשובה לא נכונה' };
     }
 }
 
@@ -390,7 +408,10 @@ waitForLibraries(function(){
         await renderLatexTo('render', raw, true);
         setStatus('מעובד במצב LaTeX', 'ok');
       }else{
-        const plain = normalizeToPlain(raw);
+        let plain = normalizeToPlain(raw);
+        // Convert |x| to abs(x) before parsing with mathjs
+        plain = plain.replace(/\|([^|]+)\|/g, 'abs($1)');
+        
         const node = math.parse(plain);
         let latex = node.toTex({ parenthesis:'keep', implicit:'show' });
         
