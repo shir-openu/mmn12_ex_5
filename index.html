@@ -332,9 +332,20 @@ function checkQuestion5Structure(userRaw) {
         }
         
         // Check for constant terms at the end (like +1, -5, +3.5, etc.)
-        // This matches: + or - followed by numbers (with optional decimal point) at the end
+        // Also check for variable terms like +x, -x
         const hasConstantTerm = /[+\-]\d+(?:\.\d+)?$/.test(normalized);
-        if (hasConstantTerm) {
+        const hasXTerm = /[+\-]x$/.test(normalized);
+        if (hasConstantTerm || hasXTerm) {
+            return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
+        // Check for additional trigonometric terms
+        // Check for sin(, cos(, tan( anywhere in the normalized string
+        const hasSinTerm = /sin\(/i.test(normalized);
+        const hasCosTerm = /cos\(/i.test(normalized);
+        const hasTanTerm = /tan\(/i.test(normalized);
+        
+        if (hasSinTerm || hasCosTerm || hasTanTerm) {
             return { valid: false, message: 'תשובה לא נכונה' };
         }
         
@@ -378,6 +389,21 @@ function checkQuestion5Structure(userRaw) {
         const hasMinusBeforeLn = /-exp\(2\*?x\)\*(?:ln|log)|-e\*\*\(2\*?x\)\*(?:ln|log)/.test(normalized);
         if (!hasMinusBeforeLn) {
             return { valid: false, message: 'תשובה לא נכונה' };
+        }
+        
+        // Check that after ln(...) there's nothing (or only +0 or -0)
+        // This will reject any extra terms like +cos(x), +sin(x), +x, +1, etc.
+        const lnMatch = normalized.match(/ln\(abs\([^)]+\)\)|ln\([^)]+\)/);
+        if (lnMatch) {
+            const afterLn = normalized.substring(lnMatch.index + lnMatch[0].length);
+            console.log('After ln term:', afterLn);
+            
+            // Allow empty, or just +0, -0, + 0, - 0
+            const isValidEnding = /^(\+0|-0|\+\s*0|-\s*0)?$/.test(afterLn);
+            if (!isValidEnding && afterLn.trim() !== '') {
+                console.log('Invalid ending detected');
+                return { valid: false, message: 'תשובה לא נכונה' };
+            }
         }
         
         console.log('All structure checks passed!');
@@ -505,19 +531,24 @@ waitForLibraries(function(){
     bar.className = 'eqtb';
 
 const items = [
-  {label:'A', title:'קבוע A',     click:()=>insertAtCaret(input,'A','')},
-  {label:'B', title:'קבוע B',     click:()=>insertAtCaret(input,'B','')},
-  {label:'x', title:'משתנה x',    click:()=>insertAtCaret(input,'x','')},
+  {label:'C_1', title:'קבוע C_1',     click:()=>insertAtCaret(input,'C_1','')},
+  {label:'C_2', title:'קבוע C_2',     click:()=>insertAtCaret(input,'C_2','')},
+
+  {label:'sin', title:'\\sin( )',     click:()=>insertAtCaret(input,'\\sin(',')')},
+  {label:'cos', title:'\\cos( )',     click:()=>insertAtCaret(input,'\\cos(',')')},
+
+  {label:'frac',title:'\\frac{ }{ }', click:()=>insertAtCaret(input,'\\frac{','}{}')},
+  {label:'√',   title:'\\sqrt{ }',    click:()=>insertAtCaret(input,'\\sqrt{','}')},
 
   {label:'e^x', title:'e^{x}',        click:()=>insertAtCaret(input,'e^','x')},
-  {label:'exp', title:'exp( )',       click:()=>insertAtCaret(input,'exp(',')')},
-  
-  {label:'ln',  title:'ln( )',        click:()=>insertAtCaret(input,'ln(',')')},
-  
   {label:'x^2', title:'x^{2}',        click:()=>insertAtCaret(input,'x^','2')},
+
+  {label:'∫',   title:'\\int',        click:()=>insertAtCaret(input,'\\int ','')},
   
   {label:'( )', title:'סוגריים עגולים',   click:()=>insertAtCaret(input,'(',')')},
+  {label:'{ }', title:'סוגריים מסולסלים', click:()=>insertAtCaret(input,'{','}')},
   {label:'| |', title:'ערך מוחלט',        click:()=>insertAtCaret(input,'|','|')},
+
 ];
 
     items.forEach(it => bar.appendChild(btn(it.label, it.title, it.click)));
